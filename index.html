@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Museum Route Finder</title>
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#0e1833;
+      --card: rgba(255,255,255,0.08);
+      --card2: rgba(255,255,255,0.12);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --border: rgba(255,255,255,0.14);
+      --shadow: 0 18px 50px rgba(0,0,0,0.35);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 600px at 20% 10%, rgba(110,231,255,0.18), transparent 60%),
+        radial-gradient(900px 500px at 90% 30%, rgba(167,139,250,0.18), transparent 60%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .wrap{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap:18px;
+    }
+
+    @media (max-width: 900px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    header{
+      padding:22px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), transparent);
+    }
+
+    h1{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: 0.2px;
+    }
+
+    .sub{
+      margin:8px 0 0;
+      color: var(--muted);
+      line-height:1.35;
+      font-size: 14px;
+    }
+
+    .content{ padding: 18px 22px 22px; }
+
+    .q{
+      padding:14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      margin-bottom: 12px;
+    }
+
+    .q-title{
+      font-weight: 650;
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: rgba(255,255,255,0.92);
+    }
+
+    .choices{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .choice{
+      flex: 1 1 180px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      cursor:pointer;
+      transition: transform .08s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+
+    .choice:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    .choice input{ accent-color: #86efac; }
+
+    .btnRow{
+      display:flex;
+      gap:12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    button{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      transition: transform .08s ease, filter .12s ease;
+    }
+
+    .primary{
+      background: linear-gradient(135deg, rgba(110,231,255,0.95), rgba(167,139,250,0.95));
+      color: #0b1020;
+      flex: 1 1 220px;
+    }
+    .primary:hover{ filter: brightness(1.05); transform: translateY(-1px); }
+
+    .ghost{
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.14);
+      flex: 0 0 auto;
+    }
+    .ghost:hover{ background: rgba(255,255,255,0.11); transform: translateY(-1px); }
+
+    .note{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    /* Result panel */
+    .resultBox{
+      padding: 18px 22px 22px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.86);
+      font-size: 13px;
+      margin: 14px 0 10px;
+    }
+
+    .routeName{
+      font-weight: 800;
+      font-size: 18px;
+      margin: 0 0 8px;
+    }
+
+    .routeDesc{
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .imgWrap{
+      border-radius: 16px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 14px 40px rgba(0,0,0,0.25);
+      min-height: 260px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    img{
+      width: 100%;
+      height: auto;
+      display:block;
+    }
+
+    .placeholder{
+      padding: 22px;
+      text-align:center;
+      color: rgba(255,255,255,0.72);
+      font-size: 14px;
+      line-height:1.4;
+    }
+
+    .error{
+      margin-top: 10px;
+      color: #fecaca;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.25);
+      padding: 10px 12px;
+      border-radius: 12px;
+      display:none;
+      font-size: 13px;
+    }
+
+    .footerTip{
+      margin-top: 12px;
+      color: rgba(255,255,255,0.65);
+      font-size: 12.5px;
+    }
+
+    code.k{
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <!-- Left: Questions -->
+    <section class="panel">
+      <header>
+        <h1>Museum Route Finder</h1>
+        <p class="sub">
+          Answer 4 quick questions and we’ll recommend the best route for you.
+          Then tap <b>Show My Route</b> to see the map.
+        </p>
+      </header>
+
+      <div class="content">
+        <form id="routeForm">
+          <!-- Q1 -->
+          <div class="q">
+            <div class="q-title">1) Do you have any difficulty walking or require step-free access?</div>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="mobility" value="yes" />
+                <span>Yes (step-free route)</span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="mobility" value="no" />
+                <span>No</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Q2 -->
+          <div class="q">
+            <div class="q-title">2) Which type of exhibits are you more interested in?</div>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="preference" value="historical" />
+                <span>Historical artifacts</span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="preference" value="modern" />
+                <span>Modern art</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Q3 -->
+          <div class="q">
+            <div class="q-title">3) How much time do you have for your visit?</div>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="time" value="short" />
+                <span>Under 1 hour</span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="time" value="long" />
+                <span>More than 1 hour</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Q4 -->
+          <div class="q">
+            <div class="q-title">4) Do you prefer to minimise walking?</div>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="walking" value="yes" />
+                <span>Yes (minimal walking)</span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="walking" value="no" />
+                <span>No (comfortable walking)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="btnRow">
+            <button type="button" class="primary" id="showBtn">Show My Route</button>
+            <button type="button" class="ghost" id="resetBtn">Reset</button>
+          </div>
+
+          <div class="note">
+            Put your 6 route images in <code class="k">/images</code> using the exact filenames:
+            <br/>
+            <code class="k">R1_Accessible_Modern.png</code>,
+            <code class="k">R2_Accessible_Historical.png</code>,
+            <code class="k">R3_Modern_Express.png</code>,
+            <code class="k">R4_Historical_Express.png</code>,
+            <code class="k">R5_Modern_Extended.png</code>,
+            <code class="k">R6_Historical_Extended.png</code>
+          </div>
+
+          <div class="error" id="errorBox"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Right: Result -->
+    <aside class="panel">
+      <header>
+        <h1>Your Recommended Route</h1>
+        <p class="sub">Your personalised map will appear here after you submit.</p>
+      </header>
+
+      <div class="resultBox">
+        <div class="pill" id="pill">🗺️ Route not selected yet</div>
+        <h2 class="routeName" id="routeName">Answer the questions</h2>
+        <p class="routeDesc" id="routeDesc">
+          Choose your preferences and click <b>Show My Route</b>.
+        </p>
+
+        <div class="imgWrap" id="imgWrap">
+          <div class="placeholder" id="placeholder">
+            Your route map image will appear here.<br/>
+            (Make sure your images are inside <code class="k">/images</code>.)
+          </div>
+          <img id="routeImg" alt="Recommended route map" style="display:none;" />
+        </div>
+
+        <div class="footerTip">
+          Tip: If an image doesn’t show, check the filename and folder path exactly.
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // ---- CONFIG: put images in /images with these exact names ----
+    const IMAGES = {
+      R1: "images/R1_Accessible_Modern.png",
+      R2: "images/R2_Accessible_Historical.png",
+      R3: "images/R3_Modern_Express.png",
+      R4: "images/R4_Historical_Express.png",
+      R5: "images/R5_Modern_Extended.png",
+      R6: "images/R6_Historical_Extended.png",
+    };
+
+    const ROUTE_META = {
+      R1: {
+        name: "Accessible Modern (Step-Free)",
+        desc: "Step-free route focusing on the Modern Art side. Uses lifts/elevators and avoids stairs."
+      },
+      R2: {
+        name: "Accessible Historical (Step-Free)",
+        desc: "Step-free route focusing on Historical Artifacts. Uses lifts/elevators and avoids stairs."
+      },
+      R3: {
+        name: "Modern Express (Quick)",
+        desc: "Fast route for Modern Art. Designed for short visits or people who want to minimise walking."
+      },
+      R4: {
+        name: "Historical Express (Quick)",
+        desc: "Fast route for Historical Artifacts. Designed for short visits or minimal walking."
+      },
+      R5: {
+        name: "Modern Extended (Explore)",
+        desc: "Longer route for Modern Art, best for visitors who have more time and are comfortable walking."
+      },
+      R6: {
+        name: "Historical Extended (Explore)",
+        desc: "Longer route for Historical Artifacts, best for visitors who have more time and are comfortable walking."
+      },
+    };
+
+    // ---- Core logic: 4 questions -> 6 routes ----
+    function pickRoute({ mobility, preference, time, walking }) {
+      // If mobility needs = YES, we ignore time/walking and pick accessible route by preference
+      if (mobility === "yes") {
+        return (preference === "modern") ? "R1" : "R2";
+      }
+
+      // Mobility = NO:
+      // Express if short time OR minimal walking
+      const isExpress = (time === "short" || walking === "yes");
+
+      if (preference === "modern") {
+        return isExpress ? "R3" : "R5";
+      } else {
+        return isExpress ? "R4" : "R6";
+      }
+    }
+
+    // ---- UI helpers ----
+    const form = document.getElementById("routeForm");
+    const showBtn = document.getElementById("showBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const errorBox = document.getElementById("errorBox");
+    const pill = document.getElementById("pill");
+    const routeName = document.getElementById("routeName");
+    const routeDesc = document.getElementById("routeDesc");
+    const routeImg = document.getElementById("routeImg");
+    const placeholder = document.getElementById("placeholder");
+
+    function getValue(name){
+      const el = form.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : "";
+    }
+
+    function showError(msg){
+      errorBox.textContent = msg;
+      errorBox.style.display = "block";
+    }
+
+    function clearError(){
+      errorBox.textContent = "";
+      errorBox.style.display = "none";
+    }
+
+    function renderRoute(routeKey){
+      const meta = ROUTE_META[routeKey];
+      const imgSrc = IMAGES[routeKey];
+
+      pill.textContent = `✅ Recommended: ${routeKey}`;
+      routeName.textContent = meta.name;
+      routeDesc.textContent = meta.desc;
+
+      // swap image
+      routeImg.onload = () => {
+        placeholder.style.display = "none";
+        routeImg.style.display = "block";
+      };
+      routeImg.onerror = () => {
+        // if image missing
+        routeImg.style.display = "none";
+        placeholder.style.display = "block";
+        placeholder.innerHTML = `
+          Image not found.<br/>
+          Make sure <code class="k">${imgSrc}</code> exists in your repo.
+        `;
+      };
+      routeImg.src = imgSrc;
+    }
+
+    showBtn.addEventListener("click", () => {
+      clearError();
+
+      const answers = {
+        mobility: getValue("mobility"),
+        preference: getValue("preference"),
+        time: getValue("time"),
+        walking: getValue("walking"),
+      };
+
+      // Validate all answered
+      const missing = [];
+      if (!answers.mobility) missing.push("Q1");
+      if (!answers.preference) missing.push("Q2");
+      if (!answers.time) missing.push("Q3");
+      if (!answers.walking) missing.push("Q4");
+
+      if (missing.length) {
+        showError(`Please answer all questions (${missing.join(", ")}).`);
+        return;
+      }
+
+      const routeKey = pickRoute(answers);
+      renderRoute(routeKey);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      form.reset();
+      clearError();
+      pill.textContent = "🗺️ Route not selected yet";
+      routeName.textContent = "Answer the questions";
+      routeDesc.textContent = "Choose your preferences and click Show My Route.";
+      routeImg.style.display = "none";
+      placeholder.style.display = "block";
+      placeholder.innerHTML = `Your route map image will appear here.<br/>(Make sure your images are inside <code class="k">/images</code>.)`;
+    });
+  </script>
+</body>
+</html>
